@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const { start, end } = getQuarterRange();
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model:'gemini-1.5-flash'});
 
     // 2. 定義「智慧雷達」的搜尋邏輯
     const radarPrompt = `
