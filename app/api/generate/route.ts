@@ -1,4 +1,3 @@
-// 1. 這裡多加了 DynamicRetrievalMode 的引入
 import { GoogleGenerativeAI, DynamicRetrievalMode } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
@@ -7,7 +6,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("🔍 [Debug] Body:", body);
     
-    // 1. 取得使用者輸入
     let prompt = "";
     if (body.prompt) {
       prompt = body.prompt;
@@ -22,15 +20,15 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     
-    // 2. 設定模型與工具
+    // ⭐【王牌切換】：改用 "gemini-exp-1206"
+    // 這是你的清單裡有的實驗性模型，通常免費額度比較寬鬆，且支援搜尋工具！
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest", 
+      model: "gemini-exp-1206", 
       
       tools: [
         {
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              // ⭐ 修正重點：使用官方 Enum，而不是字串
               mode: DynamicRetrievalMode.MODE_DYNAMIC, 
               dynamicThreshold: 0.7,
             },
@@ -53,16 +51,21 @@ export async function POST(req: Request) {
       `,
     });
 
-    console.log("🚀 啟動雷達搜尋中 (Type fixed)...");
+    console.log("🚀 切換至秘密通道 gemini-exp-1206 啟動雷達...");
 
-    // 3. 發送請求
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    // 取得搜尋來源 (如果有用到搜尋的話)
+    // 檢查有沒有用到搜尋 (Grounding)
     const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-    console.log("📡 搜尋來源資料:", groundingMetadata ? "有抓到資料" : "無搜尋資料");
+    // 如果有搜尋來源，把來源網址印在 Log 裡方便你看
+    if (groundingMetadata?.groundingChunks) {
+        console.log("📡 搜尋到的來源網站：");
+        groundingMetadata.groundingChunks.forEach((chunk: any, index: number) => {
+            if (chunk.web?.uri) console.log(`   ${index + 1}. ${chunk.web.title}: ${chunk.web.uri}`);
+        });
+    }
 
     return NextResponse.json({ result: text });
 
