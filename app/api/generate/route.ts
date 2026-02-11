@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     // 4. 初始化 Google AI
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // 5. 發送請求
     // 注意：如果你是傳 messages 陣列 (Chat 模式)，寫法會不同
