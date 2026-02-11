@@ -6,8 +6,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("🔍 [Debug] Body:", body);
     
-    // ⭐【強制更新標記】
-    console.log("🚀 切換至穩定版 gemini-1.5-flash ..."); 
+    // ⭐【強制更新標記】確保 Vercel 更新
+    console.log("🚀 嘗試使用清單中的 gemini-flash-latest ..."); 
 
     let prompt = "";
     if (body.prompt) {
@@ -23,10 +23,9 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     
-    // ⭐【關鍵修改】：使用 1.5 Flash
-    // 這是目前 Google 的「主力」模型，免費額度最穩定 (每分鐘 15 次請求)
-    // 之前報錯是因為 SDK 舊，現在 SDK 新了，這個一定可以用
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // ⭐【關鍵修改】：使用你清單裡明確存在的 "gemini-flash-latest"
+    // 這通常會指向目前最穩定的 Flash 版本 (通常是 1.5)
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -38,7 +37,6 @@ export async function POST(req: Request) {
     console.error("🔥 [API Error]:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // 如果還是遇到 429，代表整個帳號都被鎖了 (機率低)
     if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
       return NextResponse.json(
         { error: "Quota Exceeded", details: "額度不足，請稍後再試。" },
