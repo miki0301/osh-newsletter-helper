@@ -28,11 +28,15 @@ export default function Home() {
     setResult(''); // 清空舊結果
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, context }),
-      });
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ 
+      prompt: "你好，請自我介紹"  // 👈 這裡的 key 必須叫做 'prompt'
+    }),
+  });
 
       const data = await response.json();
       
