@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// 1. 這裡多加了 DynamicRetrievalMode 的引入
+import { GoogleGenerativeAI, DynamicRetrievalMode } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -6,7 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("🔍 [Debug] Body:", body);
     
-    // 1. 取得使用者輸入的關鍵字 (例如："最新的職安法規變動", "工廠火災新聞")
+    // 1. 取得使用者輸入
     let prompt = "";
     if (body.prompt) {
       prompt = body.prompt;
@@ -21,24 +22,22 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     
-    // 2. ⭐【關鍵設定】模型 + 雷達 + 人設
+    // 2. 設定模型與工具
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest", // 這是我們測試成功可用的模型
+      model: "gemini-flash-latest", 
       
-      // 🛠️ 裝上「雷達」：啟用 Google 搜尋功能
-      // 這樣它才能抓到「今天」或「本週」的最新資料！
       tools: [
         {
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC", // 自動判斷需不需要搜尋
+              // ⭐ 修正重點：使用官方 Enum，而不是字串
+              mode: DynamicRetrievalMode.MODE_DYNAMIC, 
               dynamicThreshold: 0.7,
             },
           },
         },
       ],
 
-      // 🧠 注入「靈魂」：設定系統指令 (System Prompt)
       systemInstruction: `
         你是一位專業的「職業安全衛生 (OSH) 社群小編」。
         你的任務是協助用戶收集、整理最新的職場安全、環保、ESG 或勞動法規相關資訊，並撰寫成吸引人的 Newsletter。
@@ -54,7 +53,7 @@ export async function POST(req: Request) {
       `,
     });
 
-    console.log("🚀 啟動雷達搜尋中...");
+    console.log("🚀 啟動雷達搜尋中 (Type fixed)...");
 
     // 3. 發送請求
     const result = await model.generateContent(prompt);
@@ -69,7 +68,8 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("🔥 [API Error]:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // @ts-ignore
+    const errorMessage = error.message || String(error);
     
     if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
       return NextResponse.json(
